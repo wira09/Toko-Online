@@ -12,8 +12,8 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads")); // agar gambar bisa diakses via URL
 
-const fs = require('fs');      // untuk operasi file system
-const path = require('path');  // untuk menangani path file
+const fs = require("fs"); // untuk operasi file system
+const path = require("path"); // untuk menangani path file
 
 // Setup multer untuk upload gambar
 const storage = multer.diskStorage({
@@ -74,7 +74,7 @@ app.post("/api/products", upload.single("image"), async (req, res) => {
 });
 
 // PUT update produk
-app.put('/api/products/:id', upload.single('image'), async (req, res) => {
+app.put("/api/products/:id", upload.single("image"), async (req, res) => {
   const { id } = req.params;
   const { name, description, price } = req.body;
   const image = req.file ? `/uploads/${req.file.filename}` : undefined;
@@ -104,19 +104,19 @@ app.put('/api/products/:id', upload.single('image'), async (req, res) => {
     });
     res.json(product);
   } catch (err) {
-    console.error('Error saat mengupdate produk:', err);
+    console.error("Error saat mengupdate produk:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
 // DELETE produk
-app.delete('/api/products/:id', async (req, res) => {
+app.delete("/api/products/:id", async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.product.delete({
       where: { id: parseInt(id) },
     });
-    res.json({ message: 'Produk dihapus' });
+    res.json({ message: "Produk dihapus" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

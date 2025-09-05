@@ -25,6 +25,29 @@ function ProductForm({ editingProduct, onCancelEdit, onRefresh }) {
     }
   }, [editingProduct]);
 
+  // Fungsi untuk reset form
+  const handleReset = () => {
+    if (isEditing && editingProduct) {
+      // Jika sedang edit, kembalikan ke nilai asli
+      setName(editingProduct.name || "");
+      setDescription(editingProduct.description || "");
+      setPrice(editingProduct.price || "");
+    } else {
+      // Jika sedang tambah, kosongkan semua field
+      setName("");
+      setDescription("");
+      setPrice("");
+    }
+    setImage(null);
+    setError("");
+
+    // Reset input file secara manual
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !price) {
@@ -51,11 +74,10 @@ function ProductForm({ editingProduct, onCancelEdit, onRefresh }) {
 
       if (res.ok) {
         onRefresh();
-        // Reset form setelah berhasil menyimpan
-        setName("");
-        setDescription("");
-        setPrice("");
-        setImage(null);
+        // Reset form setelah berhasil menyimpan (hanya jika tidak sedang edit)
+        if (!isEditing) {
+          handleReset();
+        }
       } else {
         const data = await res.json();
         setError(data.message || data.error || "Gagal menyimpan produk");
@@ -151,6 +173,13 @@ function ProductForm({ editingProduct, onCancelEdit, onRefresh }) {
               Batal
             </button>
           )}
+          <button
+            type="button"
+            onClick={handleReset}
+            className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded"
+          >
+            Reset
+          </button>
         </div>
       </form>
     </div>
