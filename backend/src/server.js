@@ -7,12 +7,15 @@ const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// midleware
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static("uploads")); // agar gambar bisa di akses via URL
+app.use("/uploads", express.static("uploads")); // agar gambar bisa diakses via URL
 
-// setup multer untuk upload gambar
+const fs = require('fs');      // untuk operasi file system
+const path = require('path');  // untuk menangani path file
+
+// Setup multer untuk upload gambar
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -23,29 +26,30 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// routes
+// Routes
 
-// get semua produk
+// GET semua produk
 app.get("/api/products", async (req, res) => {
   try {
     const products = await prisma.product.findMany();
-    req.json(products);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-// get produk by id
+// GET produk by ID
 app.get("/api/products/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const product = await prisma.product.findUnique({
       where: { id: parseInt(id) },
     });
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product)
+      return res.status(404).json({ error: "Produk tidak ditemukan" });
     res.json(product);
   } catch (err) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -65,17 +69,32 @@ app.post("/api/products", upload.single("image"), async (req, res) => {
     });
     res.status(201).json(product);
   } catch (err) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
 // PUT update produk
-app.put("/api/products/:id", upload.single("image"), async (req, res) => {
+app.put('/api/products/:id', upload.single('image'), async (req, res) => {
   const { id } = req.params;
   const { name, description, price } = req.body;
   const image = req.file ? `/uploads/${req.file.filename}` : undefined;
 
   try {
+    // Jika ada gambar baru, hapus gambar lama
+    if (image) {
+      const oldProduct = await prisma.product.findUnique({
+        where: { id: parseInt(id) },
+      });
+
+      if (oldProduct && oldProduct.image) {
+        const oldImagePath = path.join(__dirname, oldProduct.image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+          console.log(`Gambar lama ${oldProduct.image} berhasil dihapus`);
+        }
+      }
+    }
+
     const data = { name, description, price: parseFloat(price) };
     if (image !== undefined) data.image = image;
 
@@ -83,26 +102,27 @@ app.put("/api/products/:id", upload.single("image"), async (req, res) => {
       where: { id: parseInt(id) },
       data,
     });
-    req.json(product);
+    res.json(product);
   } catch (err) {
-    res.status(500).json({ message: error.message });
+    console.error('Error saat mengupdate produk:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
 // DELETE produk
-app.delete("/api/products/:id", async (req, res) => {
-  const { id } = req;
+app.delete('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
   try {
     await prisma.product.delete({
       where: { id: parseInt(id) },
     });
-    res.json({ message: "Product deleted" });
+    res.json({ message: 'Produk dihapus' });
   } catch (err) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// jalankan server
+// Jalankan server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server berjalan di http://localhost:${PORT}`);
 });

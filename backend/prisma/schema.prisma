@@ -15,10 +15,10 @@ datasource db {
 }
 
 model Product {
-  id Int @id @default(autoincrement())
-  name String @unique
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
   description String?
-  price Float
-  image String? //pact ke gambar
-  createAt DateTime @default(now())
+  price       Float
+  image       String?  // path ke gambar
+  createdAt   DateTime @default(now())
 }
